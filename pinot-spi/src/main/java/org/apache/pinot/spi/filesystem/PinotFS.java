@@ -108,7 +108,16 @@ public abstract class PinotFS implements Closeable, Serializable {
       // ensures the parent path of dst exists.
       try {
         Path parentPath = Paths.get(dstUri.getPath()).getParent();
-        URI parentUri = new URI(dstUri.getScheme(), dstUri.getHost(), parentPath.toString(), null);
+        /**
+         * Use authority instead of host if the value contains "_": uri.getHost() will be null
+         * This is related to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6587184
+         * @see java.net.URI.Parser#parseHostname
+         */
+        String host = dstUri.getHost();
+        if (host == null) {
+          host = dstUri.getAuthority();
+        }
+        URI parentUri = new URI(dstUri.getScheme(), host, parentPath.toString(), null, null);
         mkdir(parentUri);
       } catch (URISyntaxException e) {
         throw new IOException(e);
